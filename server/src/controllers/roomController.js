@@ -1,6 +1,7 @@
 const { request } = require("express");
-const Rooms = require("../models/Rooms");
-const Questions = require("../models/Questions");
+const Rooms = require("../models/Room");
+const Questions = require("../models/Question");
+const { callGemini } = require("../services/geminiService");
 
 const roomController = {
     createRoom: async (request, response) => {
@@ -70,6 +71,25 @@ const roomController = {
             response.status(500).json({ message: 'Internal server error' });
         }
     },
+    summarizeQuestions: async (req, res) => {
+
+        try {
+            
+            const {code} = req.params;
+            const questions = await Questions.find({roomCode : code});
+
+            if(!question || question.length === 0) {
+                return res.status(404).json({ message: 'No questions found for this room' });
+            }
+
+            const summary = await callGemini(questions);
+            res.json(summary);
+
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }
 };
 
 module.exports = roomController;
